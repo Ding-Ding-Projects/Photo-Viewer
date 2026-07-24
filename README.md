@@ -14,6 +14,11 @@ Your entire photo & video library, understood by AI, indexed once, and searchabl
 - **Browse for folder** — pick the photos/videos folder you want to index and view with a native folder chooser.
 - Your chosen folder is remembered between sessions and can be rescanned anytime.
 
+### 🐳 Self-hosted Website (Docker)
+- **One container, whole library** — run a single Docker image, mount your photos folder, done.
+- **All devices** — responsive web UI works on phone, tablet, and desktop browsers.
+- **Original files** — view photos & videos in the browser and **download the original, unmodified file** anytime.
+
 ### 🤖 AI Indexing (persistent)
 - Automatic AI analysis of photos and videos on import: objects, scenes, faces, text (OCR), dominant colors, and more.
 - Indexes are **saved locally** — search them later without re-processing a single file.
@@ -49,6 +54,7 @@ Your entire photo & video library, understood by AI, indexed once, and searchabl
 | AI | On-device inference (no cloud uploads of your library) |
 | Index storage | Persistent local database (IndexedDB / SQLite-class) |
 | Metadata | EXIF / GPS extraction for date & location sorting |
+| Deployment | Single Docker container; volume-mount your photos folder; original-file download API |
 
 ## Privacy
 

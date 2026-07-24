@@ -31,7 +31,14 @@
 - [ ] Auto-sort/group by date, location, media type
 - [ ] Smart categories & albums
 
-## Milestone 5 — Polish & release
+## Milestone 5 — Docker & self-hosting
+- [ ] Backend server serving the library over HTTP (browse, view, stream photos & videos)
+- [ ] **Original-file downloads** — fetch the unmodified image/video from any device
+- [ ] Responsive web UI verified on phone, tablet, and desktop
+- [ ] `Dockerfile` + `docker-compose.yml` — one container, volume-mount the photos folder
+- [ ] README self-hosting guide (ports, volumes, environment variables)
+
+## Milestone 6 — Polish & release
 - [ ] Accessibility pass (keyboard, focus, contrast, screen reader)
 - [ ] Clipping/sizing pass at 100–200% scale and narrow widths
 - [ ] Installable release artifact via CI
