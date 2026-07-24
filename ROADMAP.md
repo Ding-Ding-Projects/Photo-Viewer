@@ -14,6 +14,7 @@
 - [ ] Non-blocking notification system (toasts + notification centre)
 
 ## Milestone 2 — Library & media
+- [ ] **Browse-for-folder picker** to choose the photos/videos folder to index and view (persisted between sessions, one-click rescan)
 - [ ] Folder import with incremental scanning
 - [ ] Photo grid + viewer (zoom, pan, keyboard navigation)
 - [ ] Video playback, thumbnails, scrubbing

@@ -10,6 +10,10 @@ Your entire photo & video library, understood by AI, indexed once, and searchabl
 
 ## Planned Features
 
+### 📁 Library Folders
+- **Browse for folder** — pick the photos/videos folder you want to index and view with a native folder chooser.
+- Your chosen folder is remembered between sessions and can be rescanned anytime.
+
 ### 🤖 AI Indexing (persistent)
 - Automatic AI analysis of photos and videos on import: objects, scenes, faces, text (OCR), dominant colors, and more.
 - Indexes are **saved locally** — search them later without re-processing a single file.
