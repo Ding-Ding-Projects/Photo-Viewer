@@ -13,6 +13,7 @@ Your entire photo & video library, understood by AI, indexed once, and searchabl
 ### 📁 Library Folders
 - **Browse for folder** — pick the photos/videos folder you want to index and view with a native folder chooser.
 - Your chosen folder is remembered between sessions and can be rescanned anytime.
+- **Local git-backed history** — the app git-inits your chosen photos folder and commits snapshots to a local git repo, so library changes stay recoverable.
 
 ### 🐳 Self-hosted Website (Docker)
 - **One container, whole library** — run a single Docker image, mount your photos folder, done.
@@ -30,6 +31,7 @@ Your entire photo & video library, understood by AI, indexed once, and searchabl
 
 ### 🎬 Videos
 - First-class video support: playback, thumbnails, timeline scrubbing.
+- Large videos are automatically **split into parts of max 1 GB per file**.
 
 ### 🎨 Material Design 3
 - Full M3 Expressive UI: tokens, typography, shape, elevation, motion.

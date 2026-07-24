@@ -15,9 +15,11 @@
 
 ## Milestone 2 — Library & media
 - [ ] **Browse-for-folder picker** to choose the photos/videos folder to index and view (persisted between sessions, one-click rescan)
+- [ ] **Local git-backed history** — git-init the chosen photos folder and commit snapshots to a local git repo
 - [ ] Folder import with incremental scanning
 - [ ] Photo grid + viewer (zoom, pan, keyboard navigation)
 - [ ] Video playback, thumbnails, scrubbing
+- [ ] Video splitting — max 1 GB per file part
 - [ ] EXIF / GPS metadata extraction
 
 ## Milestone 3 — AI indexing
