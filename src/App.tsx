@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import AppBar from './AppBar'
 import GalleryGrid from './GalleryGrid'
@@ -9,12 +9,22 @@ import NavigationDrawer from './NavigationDrawer'
 import SettingsDialog from './SettingsDialog'
 import SnackbarRegion from './SnackbarRegion'
 import { IcHeart, IcTrash } from './icons'
+import { pickLibraryFolder } from './library'
 import { ALBUMS, BASE_PHOTOS } from './data'
 import { I18nContext, fmt, makeBi, useTx } from './i18n'
 import { usePrefs } from './theme'
-import type { Photo, SortKey, Toast, View } from './types'
+import type { Album, Photo, SortKey, Toast, View } from './types'
 
 const FAVS_KEY = 'pv:favorites'
+
+function readFavs(): string[] {
+  try {
+    const v: unknown = JSON.parse(localStorage.getItem(FAVS_KEY) || '[]')
+    return Array.isArray(v) ? (v as string[]) : []
+  } catch {
+    return []
+  }
+}
 
 export default function App() {
   const [prefs, setP] = usePrefs()
@@ -32,12 +42,7 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
 
   /* ----- library state ----- */
   const [photos, setPhotos] = useState<Photo[]>(() => {
-    let favs: string[] = []
-    try {
-      favs = JSON.parse(localStorage.getItem(FAVS_KEY) || '[]')
-    } catch {
-      favs = []
-    }
+    const favs = readFavs()
     return BASE_PHOTOS.map((ph) => ({ ...ph, favorite: favs.includes(ph.id) || ph.favorite }))
   })
   const [view, setView] = useState<View>({ kind: 'all' })
@@ -50,6 +55,9 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [lastDeleted, setLastDeleted] = useState<Photo[]>([])
+  const [albums, setAlbums] = useState<Album[]>(ALBUMS)
+  const [libraryName, setLibraryName] = useState<string | null>(null)
+  const libUrls = useRef<string[]>([])
 
   /* ----- regex search (plain text is the default; builder opt-in per repo spec) ----- */
   const [regexOn, setRegexOn] = useState(false)
@@ -66,8 +74,11 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
     }
   }, [regexOn, pattern, flagStr])
 
+  /* persist favorites without dropping ids from a library that isn't currently loaded */
   useEffect(() => {
-    localStorage.setItem(FAVS_KEY, JSON.stringify(photos.filter((ph) => ph.favorite).map((ph) => ph.id)))
+    const current = new Set(photos.map((ph) => ph.id))
+    const keep = readFavs().filter((id) => !current.has(id))
+    localStorage.setItem(FAVS_KEY, JSON.stringify([...keep, ...photos.filter((ph) => ph.favorite).map((ph) => ph.id)]))
   }, [photos])
 
   const pushToast = useCallback((message: string, actionLabel?: string, onAction?: () => void) => {
@@ -77,7 +88,7 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
   }, [])
   const dismissToast = useCallback((id: string) => setToasts((t) => t.filter((x) => x.id !== id)), [])
 
-  const albumName = useCallback((id: string) => (ALBUMS.find((a) => a.id === id) ?? { name: id }).name, [])
+  const albumName = useCallback((id: string) => (albums.find((a) => a.id === id) ?? { name: id }).name, [albums])
   const haystack = useCallback(
     (ph: Photo) => [ph.filename, albumName(ph.albumId), ph.exif.location, ph.exif.camera].join(' ').toLowerCase(),
     [albumName],
@@ -168,6 +179,27 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
     setSelecting(false)
     setSelected(new Set())
   }
+
+  /* ----- folder picker: load a real library via the File System Access API ----- */
+  const chooseFolder = useCallback(async () => {
+    const res = await pickLibraryFolder()
+    if (res.status === 'cancelled') return
+    if (res.status === 'unsupported') return pushToast(tx('toast.folder.unsupported'))
+    if (res.status === 'error') return pushToast(fmt(tx('toast.folder.error'), { m: res.message }))
+    if (res.status === 'empty') return pushToast(fmt(tx('toast.folder.empty'), { f: res.name }))
+    libUrls.current.forEach((u) => URL.revokeObjectURL(u))
+    libUrls.current = res.urls
+    const favs = readFavs()
+    setPhotos(res.photos.map((ph) => (favs.includes(ph.id) ? { ...ph, favorite: true } : ph)))
+    setAlbums(res.albums)
+    setLibraryName(res.name)
+    setView({ kind: 'all' })
+    setLightboxId(null)
+    setSelecting(false)
+    setSelected(new Set())
+    setSettingsOpen(false)
+    pushToast(fmt(tx('toast.folder.loaded'), { n: String(res.photos.length), f: res.name }))
+  }, [pushToast, tx])
   const onCardClick = (ph: Photo) => {
     if (selecting) toggleSelect(ph.id)
     else setLightboxId(ph.id)
@@ -205,8 +237,9 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
         view={view}
         onView={setView}
         photos={photos}
+        albums={albums}
         favCount={photos.filter((ph) => ph.favorite).length}
-        cameraCount={new Set(photos.map((ph) => ph.exif.camera)).size}
+        cameraCount={new Set(photos.map((ph) => ph.exif.camera).filter((c) => c !== '—')).size}
         tx={tx}
       />
 
@@ -305,7 +338,8 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
           prefs={p.prefs}
           setP={p.setP}
           onClose={() => setSettingsOpen(false)}
-          onChooseFolder={() => pushToast(tx('toast.folder'))}
+          onChooseFolder={chooseFolder}
+          libraryName={libraryName}
           tx={tx}
         />
       )}

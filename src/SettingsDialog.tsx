@@ -9,6 +9,7 @@ export default function SettingsDialog(p: {
   setP: <K extends keyof Prefs>(k: K, v: Prefs[K]) => void
   onClose: () => void
   onChooseFolder: () => void
+  libraryName: string | null
   tx: (k: string) => string
 }) {
   const { prefs, setP } = p
@@ -167,7 +168,7 @@ export default function SettingsDialog(p: {
                 <div className="t">
                   <L k="folder" />
                 </div>
-                <div className="s">{p.tx('folder.note')}</div>
+                <div className="s">{p.libraryName ?? p.tx('folder.note')}</div>
               </div>
               <button className="btn btn-tonal" style={{ height: 36 }} data-od-id="folder-choose" onClick={p.onChooseFolder}>
                 <L k="folder.choose" />

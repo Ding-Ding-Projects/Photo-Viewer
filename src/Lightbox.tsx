@@ -163,22 +163,26 @@ export default function Lightbox(p: {
             <div className="exif-group">
               <ExifRow k={p.tx('info.captured')} v={photo.exif.taken} />
               <ExifRow k={p.tx('info.album')} v={p.albumName(photo.albumId)} />
-              <ExifRow k={p.tx('info.location')} v={photo.exif.location} />
+              {photo.exif.location !== '—' && <ExifRow k={p.tx('info.location')} v={photo.exif.location} />}
             </div>
-            <div className="lb-info-title">{p.tx('info.camera')}</div>
-            <div className="exif-group">
-              <ExifRow k={p.tx('info.body')} v={photo.exif.camera} />
-              <ExifRow k={p.tx('info.lens')} v={photo.exif.lens} />
-              <ExifRow k={p.tx('info.focal')} v={photo.exif.focal} />
-              <ExifRow k={p.tx('info.aperture')} v={photo.exif.aperture} />
-              <ExifRow k={p.tx('info.shutter')} v={photo.exif.shutter} />
-              <ExifRow k="ISO" v={String(photo.exif.iso)} />
-            </div>
+            {photo.exif.camera !== '—' && (
+              <>
+                <div className="lb-info-title">{p.tx('info.camera')}</div>
+                <div className="exif-group">
+                  <ExifRow k={p.tx('info.body')} v={photo.exif.camera} />
+                  {photo.exif.lens !== '—' && <ExifRow k={p.tx('info.lens')} v={photo.exif.lens} />}
+                  {photo.exif.focal !== '—' && <ExifRow k={p.tx('info.focal')} v={photo.exif.focal} />}
+                  {photo.exif.aperture !== '—' && <ExifRow k={p.tx('info.aperture')} v={photo.exif.aperture} />}
+                  {photo.exif.shutter !== '—' && <ExifRow k={p.tx('info.shutter')} v={photo.exif.shutter} />}
+                  {photo.exif.iso > 0 && <ExifRow k="ISO" v={String(photo.exif.iso)} />}
+                </div>
+              </>
+            )}
             <div className="lb-info-title">{p.tx('info.file')}</div>
             <div className="exif-group">
-              <ExifRow k={p.tx('info.dims')} v={photo.exif.width + ' × ' + photo.exif.height} />
+              {photo.exif.width > 0 && <ExifRow k={p.tx('info.dims')} v={photo.exif.width + ' × ' + photo.exif.height} />}
               <ExifRow k={p.tx('info.size')} v={photo.exif.size} />
-              <ExifRow k={p.tx('info.format')} v="JPEG · original" />
+              <ExifRow k={p.tx('info.format')} v={(photo.filename.split('.').pop() ?? '').toUpperCase() + ' · original'} />
             </div>
             <a
               className="lb-download"

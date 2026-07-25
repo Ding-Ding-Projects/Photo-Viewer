@@ -61,12 +61,18 @@ export const STR: Record<string, Str> = {
     z: '1 = 完全正經 · 5 = 最玩得。錯誤訊息喺任何級別都保持清晰。',
   },
   folder: { e: 'Library folder', z: '相片資料夾' },
-  'folder.note': { e: 'Not connected — folder picking ships in Milestone 2.', z: '未連接 — 揀資料夾功能會喺 Milestone 2 推出。' },
-  'folder.choose': { e: 'Choose folder…', z: '揀資料夾…' },
-  'toast.folder': {
-    e: 'Folder picking arrives in Milestone 2 — this prototype runs on a sample library.',
-    z: '揀資料夾功能 Milestone 2 先有 — 而家係範例相片庫。',
+  'folder.note': {
+    e: 'Pick a folder from this device — photos stay put, nothing is uploaded.',
+    z: '從呢部裝置揀個資料夾 — 相片留喺原處，唔會上傳。',
   },
+  'folder.choose': { e: 'Choose folder…', z: '揀資料夾…' },
+  'toast.folder.loaded': { e: 'Loaded {n} photos from “{f}”', z: '已從「{f}」載入 {n} 張相', f: '「{f}」入咗 {n} 張相，齊晒' },
+  'toast.folder.empty': { e: 'No photos found in “{f}”', z: '「{f}」搵唔到相片', f: '「{f}」一張相都冇喎' },
+  'toast.folder.unsupported': {
+    e: 'This browser can’t open folders — try Chrome or Edge.',
+    z: '呢個瀏覽器唔支援揀資料夾 — 請用 Chrome 或 Edge。',
+  }, // errors stay clear at every funny level
+  'toast.folder.error': { e: 'Couldn’t read that folder: {m}', z: '讀唔到呢個資料夾：{m}' },
   'toast.favAdd': { e: 'Added {f} to Favorites', z: '已收藏 {f}', f: '入咗 {f} 做至愛' },
   'toast.favDel': { e: 'Removed {f} from Favorites', z: '已取消收藏 {f}' },
   'toast.favN': { e: 'Added {n} photos to Favorites', z: '已收藏 {n} 張相', f: '畀晒心，{n} 張' },

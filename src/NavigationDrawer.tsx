@@ -1,13 +1,13 @@
-import { ALBUMS } from './data'
 import L from './L'
 import { IcAperture, IcFolder, IcHeart, IcStack } from './icons'
 import { fmt } from './i18n'
-import type { Photo, View } from './types'
+import type { Album, Photo, View } from './types'
 
 export default function NavigationDrawer(p: {
   view: View
   onView: (v: View) => void
   photos: Photo[]
+  albums: Album[]
   favCount: number
   cameraCount: number
   tx: (k: string) => string
@@ -45,7 +45,7 @@ export default function NavigationDrawer(p: {
         <div className="nav-label" data-od-id="album-list">
           <L k="nav.albums" />
         </div>
-        {ALBUMS.map((a) => (
+        {p.albums.map((a) => (
           <button
             key={a.id}
             className={'nav-item' + (p.view.kind === 'album' && p.view.albumId === a.id ? ' active' : '')}
