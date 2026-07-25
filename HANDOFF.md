@@ -1,4 +1,4 @@
-# Handoff
+﻿# Handoff
 
 ## Current state (2026-07-24)
 
@@ -14,12 +14,12 @@ Repository initialized and published to GitHub: `DingDingChae/Photo-Viewer`.
 - Photo grid + viewer with zoom, drag-pan, keyboard navigation, filmstrip, and EXIF side sheet running against `public/sample-library/` (8 CC-licensed sample photos).
 - Folder picker wired to the File System Access API: Settings → Choose folder recursively scans a device folder, subfolders become albums, photos load via session object URLs, and favorites persist across library switches. Chromium-only; unsupported browsers get a clear toast. Folder persistence + rescan remain Milestone 2.
 - AI indexing prototype (first Milestone 3 slice): on-device ViT image classification (ImageNet-1k) + dominant-color extraction running in a Web Worker; results persist to a schema/model-versioned IndexedDB cache so indexing runs once; serial queue with progress snackbar + cancel; tags join the search haystack and render in the lightbox info panel. The ONNX WASM runtime ships in `dist`; the model (~44 MB) downloads once from the Hugging Face CDN at runtime. Faces, OCR, and embeddings are deliberately not in this slice; ROADMAP M3 boxes stay unticked until runtime-validated against a real library.
+- CI workflow completed: test job (lint + build on Ubuntu/Node 20) → release job (auto-increment tag via `git describe`, non-draft GitHub Release via `softprops/action-gh-release@v2`).
 
 **Next up:**
-1. Add CI workflow (trigger: `push` + `workflow_dispatch`) that tests first, then creates one uniquely tagged non-draft release on success.
-2. Design the persistent AI index schema before writing indexing code.
-3. Plan the self-hosting architecture early (backend + frontend in one Docker image, volume-mounted library, original-file download endpoint) so the Milestone 1 scaffold doesn't box it in.
+1. Design the persistent AI index schema before writing indexing code.
+2. Plan the self-hosting architecture early (backend + frontend in one Docker image, volume-mounted library, original-file download endpoint) so the Milestone 1 scaffold doesn't box it in.
 
 **Blockers / notes:**
-- None. CI/release automation is next; the scaffold build is green.
+- None. Scaffold build is green.
 - License not yet chosen (`TBD` in README).
