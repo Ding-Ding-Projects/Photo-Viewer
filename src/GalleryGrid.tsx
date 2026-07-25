@@ -15,7 +15,7 @@ export default function GalleryGrid(p: {
   thumbSize: number
   empty: EmptyState | null
   onCardClick: (ph: Photo) => void
-  onFavorite: (id: string) => void
+  onFavorite: (ph: Photo) => void
 }) {
   if (p.empty) {
     return (
@@ -56,7 +56,7 @@ export default function GalleryGrid(p: {
                 aria-label={ph.favorite ? 'Remove from favorites' : 'Add to favorites'}
                 onClick={(e) => {
                   e.stopPropagation()
-                  p.onFavorite(ph.id)
+                  p.onFavorite(ph)
                 }}
               >
                 <IcHeart filled={ph.favorite} size={16} />

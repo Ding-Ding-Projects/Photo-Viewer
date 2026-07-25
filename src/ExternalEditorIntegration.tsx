@@ -62,6 +62,3 @@ export default function ExternalEditorIntegration(p: {
   )
 }
 
-function checkDetect(cmd: string): boolean {
-  return false
-}

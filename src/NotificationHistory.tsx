@@ -1,6 +1,5 @@
 ﻿import { useMemo, useState } from 'react'
 import { IcX, IcSearch } from './icons'
-import L from './L'
 import { useTx } from './i18n'
 import type { HistoryEntry } from './types'
 

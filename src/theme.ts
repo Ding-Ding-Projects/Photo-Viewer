@@ -25,6 +25,7 @@ export const DEFAULT_PREFS: Prefs = {
   fontScale: 1,
   lang: 'en',
   funny: 3,
+  editorChoice: '',
 }
 
 /**

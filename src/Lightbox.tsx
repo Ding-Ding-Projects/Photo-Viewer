@@ -19,7 +19,7 @@ export default function Lightbox(p: {
   onClose: () => void
   onStep: (dir: number) => void
   onJump: (id: string) => void
-  onFavorite: (id: string) => void
+  onFavorite: (ph: Photo) => void
   onDownload: (ph: Photo) => void
   albumName: (id: string) => string
   tx: (k: string) => string
@@ -48,7 +48,7 @@ export default function Lightbox(p: {
       if (e.key === 'Escape') p.onClose()
       else if (e.key === 'ArrowLeft') p.onStep(-1)
       else if (e.key === 'ArrowRight') p.onStep(1)
-      else if (e.key === 'f' || e.key === 'F') p.onFavorite(photo.id)
+      else if (e.key === 'f' || e.key === 'F') p.onFavorite(photo)
       else if (e.key === 'i' || e.key === 'I') setInfoOpen((o) => !o)
     }
     window.addEventListener('keydown', onKey)
@@ -96,7 +96,7 @@ export default function Lightbox(p: {
             className={'lb-btn' + (photo.favorite ? ' is-fav' : '')}
             data-od-id="lightbox-favorite"
             title={p.tx('hint.fav') + ' (F)'}
-            onClick={() => p.onFavorite(photo.id)}
+            onClick={() => p.onFavorite(photo)}
           >
             <IcHeart filled={photo.favorite} size={19} />
           </button>
@@ -245,3 +245,4 @@ export default function Lightbox(p: {
     </div>
   )
 }
+
