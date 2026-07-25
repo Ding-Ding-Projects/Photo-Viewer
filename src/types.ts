@@ -12,6 +12,18 @@ export interface ExifData {
   location: string
 }
 
+export interface AiLabel {
+  text: string
+  score: number
+}
+
+export interface AiData {
+  v: 1
+  model: string
+  labels: AiLabel[]
+  colors: [number, number, number][]
+}
+
 export interface Photo {
   id: string
   src: string
@@ -19,6 +31,7 @@ export interface Photo {
   albumId: string
   favorite: boolean
   exif: ExifData
+  ai?: AiData
 }
 
 export interface Album {
