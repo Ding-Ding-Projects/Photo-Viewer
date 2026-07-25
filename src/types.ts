@@ -61,3 +61,11 @@ export interface Prefs {
   lang: Lang
   funny: number
 }
+
+export interface HistoryEntry {
+  id: string;
+  message: string;
+  time: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}
