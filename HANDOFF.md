@@ -9,13 +9,15 @@ Repository initialized and published to GitHub: `DingDingChae/Photo-Viewer`.
 - GitHub Discussions enabled; rolling progress thread opened in `General`.
 - Changelog Announcement posted and pinned for the initial push.
 - GitHub Project created, linked to the repo, with one task item moved to `In Progress`.
+- Vite + React + TypeScript app scaffolded; lint and production build pass; dev server smoke-tested (HTTP 200).
+- Milestone 1 follow-ups landed in the scaffold: M3 Expressive theming with runtime controls (light/dark, seed color, density, font + scale), language system (English / HK Cantonese / bilingual + funny-level slider; errors stay clear), non-blocking snackbar notifications with Undo, and regex builder on the search bar (plain-text default).
+- Photo grid + viewer with zoom, drag-pan, keyboard navigation, filmstrip, and EXIF side sheet running against `public/sample-library/` (8 CC-licensed sample photos).
 
 **Next up:**
-1. Scaffold the app: Vite + React + TypeScript (see ROADMAP.md Milestone 1). Follow the step-by-step guide in [BUILD-INSTRUCTIONS.md](BUILD-INSTRUCTIONS.md).
-2. Add CI workflow (trigger: `push` + `workflow_dispatch`) that tests first, then creates one uniquely tagged non-draft release on success.
-3. Design the persistent AI index schema before writing indexing code.
-4. Plan the self-hosting architecture early (backend + frontend in one Docker image, volume-mounted library, original-file download endpoint) so the Milestone 1 scaffold doesn't box it in.
+1. Add CI workflow (trigger: `push` + `workflow_dispatch`) that tests first, then creates one uniquely tagged non-draft release on success.
+2. Design the persistent AI index schema before writing indexing code.
+3. Plan the self-hosting architecture early (backend + frontend in one Docker image, volume-mounted library, original-file download endpoint) so the Milestone 1 scaffold doesn't box it in.
 
 **Blockers / notes:**
-- None. No application code exists yet — CI/release automation lands with the app scaffold.
+- None. CI/release automation is next; the scaffold build is green.
 - License not yet chosen (`TBD` in README).

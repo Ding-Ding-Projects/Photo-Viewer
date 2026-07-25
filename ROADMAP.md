@@ -8,16 +8,16 @@
 - [ ] CI workflow (push + workflow_dispatch) with test-then-release pipeline
 
 ## Milestone 1 — App scaffolding
-- [ ] Vite + React + TypeScript project
-- [ ] Material Design 3 (M3 Expressive) theming with runtime controls (light/dark, density, seed color, fonts)
-- [ ] Language system: English / HK Cantonese / bilingual + per-language funny-level slider
-- [ ] Non-blocking notification system (toasts + notification centre)
+- [x] Vite + React + TypeScript project
+- [x] Material Design 3 (M3 Expressive) theming with runtime controls (light/dark, density, seed color, fonts)
+- [x] Language system: English / HK Cantonese / bilingual + per-language funny-level slider
+- [x] Non-blocking notification system (corner snackbars; notification centre still pending)
 
 ## Milestone 2 — Library & media
 - [ ] **Browse-for-folder picker** to choose the photos/videos folder to index and view (persisted between sessions, one-click rescan)
 - [ ] **Local git-backed history** — git-init the chosen photos folder and commit snapshots to a local git repo
 - [ ] Folder import with incremental scanning
-- [ ] Photo grid + viewer (zoom, pan, keyboard navigation)
+- [x] Photo grid + viewer (zoom, pan, keyboard navigation)
 - [ ] Video playback, thumbnails, scrubbing
 - [ ] Video splitting — max 1 GB per file part
 - [ ] EXIF / GPS metadata extraction
