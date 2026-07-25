@@ -60,12 +60,13 @@ export interface Prefs {
   fontScale: number
   lang: Lang
   funny: number
+  editorChoice: string
 }
 
 export interface HistoryEntry {
-  id: string;
-  message: string;
-  time: string;
-  actionLabel?: string;
-  onAction?: () => void;
+  id: string
+  message: string
+  time: string
+  actionLabel?: string
+  onAction?: () => void
 }

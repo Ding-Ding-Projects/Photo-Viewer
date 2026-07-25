@@ -1,8 +1,9 @@
-import { Seg } from './controls'
+﻿import { Seg } from './controls'
 import L from './L'
 import { IcCheck, IcFolder, IcX } from './icons'
 import { FONTS, SEEDS } from './theme'
 import type { Lang, Prefs } from './types'
+import ExternalEditorIntegration from './ExternalEditorIntegration'
 
 export default function SettingsDialog(p: {
   prefs: Prefs
@@ -128,8 +129,8 @@ export default function SettingsDialog(p: {
                 {(
                   [
                     ['en', 'English'],
-                    ['zh', '粵語'],
-                    ['bi', '雙語'],
+                    ['zh', 'ç²µèªž'],
+                    ['bi', 'é›™èªž'],
                   ] as const
                 ).map(([v, label]) => (
                   <button key={v} className={prefs.lang === v ? 'on' : ''} onClick={() => setP('lang', v as Lang)}>
@@ -174,6 +175,13 @@ export default function SettingsDialog(p: {
                 <L k="folder.choose" />
               </button>
             </div>
+          </div>
+
+          <div className="dlg-section" data-od-id="settings-editor">
+            <div className="dlg-label">
+              <L k="externalEditor" />
+            </div>
+            <ExternalEditorIntegration onConfigured={(id) => setP('editorChoice', id)} />
           </div>
         </div>
       </div>

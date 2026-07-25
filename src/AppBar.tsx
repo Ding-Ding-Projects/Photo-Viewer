@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
+﻿import type { ReactNode } from 'react'
 import L from './L'
-import { IcGear, IcSearch, IcSparkle, IcX } from './icons'
+import { IcBell, IcGear, IcSearch, IcSparkle, IcX } from './icons'
 import { fmt, useBi } from './i18n'
 import type { SortKey } from './types'
 
@@ -41,6 +41,8 @@ export default function AppBar(p: {
   onIndex: () => void
   indexing: boolean
   onOpenSettings: () => void
+  onOpenNotifications: () => void
+  notifCount: number
   tx: (k: string) => string
 }) {
   const bi = useBi()
@@ -85,7 +87,7 @@ export default function AppBar(p: {
               value={p.rx.pattern}
               autoFocus
               onChange={(e) => p.onRxPattern(e.target.value)}
-              placeholder={p.tx('rx.pattern') + '  ·  ^DSC_\\d+\\.jpg$'}
+              placeholder={p.tx('rx.pattern') + '  Â·  ^DSC_\\d+\\.jpg$'}
               spellCheck={false}
               data-od-id="regex-pattern"
             />
@@ -104,7 +106,7 @@ export default function AppBar(p: {
                 ? fmt(bi('rx.invalid').a, { m: p.rx.error })
                 : p.rx.pattern
                   ? fmt(p.tx('rx.matches'), { n: String(p.rx.matches) })
-                  : ' '}
+                  : 'Â '}
             </div>
             <div className="rx-actions">
               <button className="btn btn-text" data-od-id="regex-clear" onClick={p.onRxClear}>
@@ -169,6 +171,19 @@ export default function AppBar(p: {
         onClick={p.onIndex}
       >
         <IcSparkle />
+      </button>
+      <button
+        className={'icon-btn' + (p.notifCount > 0 ? ' badge-active' : '')}
+        data-od-id="notification-button"
+        title={p.tx('notifications')}
+        onClick={p.onOpenNotifications}
+      >
+        <IcBell />
+        {p.notifCount > 0 && (
+          <span className="badge" style={{ position: 'absolute', top: 2, right: 2, fontSize: 9, padding: '1px 4px', borderRadius: 8, background: 'var(--primary)', color: 'var(--on-primary)' }}>
+            {p.notifCount}
+          </span>
+        )}
       </button>
       <button className="icon-btn" data-od-id="settings-button" title={p.tx('settings')} onClick={p.onOpenSettings}>
         <IcGear />

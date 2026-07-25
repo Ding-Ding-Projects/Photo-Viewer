@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import AppBar from './AppBar'
 import GalleryGrid from './GalleryGrid'
@@ -8,16 +8,31 @@ import L from './L'
 import NavigationDrawer from './NavigationDrawer'
 import SettingsDialog from './SettingsDialog'
 import SnackbarRegion from './SnackbarRegion'
-import { IcHeart, IcTrash } from './icons'
+import NotificationHistory from './NotificationHistory'
+import { IcBell, IcHeart, IcTrash } from './icons'
 import { createIndexer } from './aiIndexer'
 import { aiLoadAll } from './aiStore'
 import { pickLibraryFolder } from './library'
 import { ALBUMS, BASE_PHOTOS } from './data'
 import { I18nContext, fmt, makeBi, useTx } from './i18n'
 import { usePrefs } from './theme'
-import type { Album, Photo, SortKey, Toast, View } from './types'
+import type { Album, HistoryEntry, Photo, SortKey, Toast, View } from './types'
 
 const FAVS_KEY = 'pv:favorites'
+const NOTIF_KEY = 'pv:notifications'
+
+function readNotifications(): HistoryEntry[] {
+  try {
+    const v: unknown = JSON.parse(localStorage.getItem(NOTIF_KEY) || '[]')
+    return Array.isArray(v) ? (v as HistoryEntry[]) : []
+  } catch {
+    return []
+  }
+}
+
+function writeNotifications(notes: HistoryEntry[]) {
+  localStorage.setItem(NOTIF_KEY, JSON.stringify(notes.slice(-100)))
+}
 
 function readFavs(): string[] {
   try {
@@ -55,7 +70,9 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [lightboxId, setLightboxId] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [notificationHistory, setNotificationHistory] = useState<HistoryEntry[]>(readNotifications)
   const [lastDeleted, setLastDeleted] = useState<Photo[]>([])
   const [albums, setAlbums] = useState<Album[]>(ALBUMS)
   const [libraryName, setLibraryName] = useState<string | null>(null)
@@ -70,9 +87,7 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
       if (!alive || cached.size === 0) return
       setPhotos((ps) => ps.map((ph) => (!ph.ai && cached.has(ph.id) ? { ...ph, ai: cached.get(ph.id) } : ph)))
     })
-    return () => {
-      alive = false
-    }
+    return () => { alive = false }
   }, [])
 
   /* ----- regex search (plain text is the default; builder opt-in per repo spec) ----- */
@@ -97,12 +112,33 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
     localStorage.setItem(FAVS_KEY, JSON.stringify([...keep, ...photos.filter((ph) => ph.favorite).map((ph) => ph.id)]))
   }, [photos])
 
-  const pushToast = useCallback((message: string, actionLabel?: string, onAction?: () => void) => {
-    const id = Math.random().toString(36).slice(2)
-    setToasts((t) => [...t, { id, message, actionLabel, onAction }])
-    window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3600)
-  }, [])
-  const dismissToast = useCallback((id: string) => setToasts((t) => t.filter((x) => x.id !== id)), [])
+  const pushToast = useCallback(
+    (message: string, actionLabel?: string, onAction?: () => void) => {
+      const id = Math.random().toString(36).slice(2)
+      const entry: HistoryEntry = { id, message, time: new Date().toLocaleTimeString(), actionLabel, onAction }
+      setNotificationHistory((h) => [...h, entry])
+      writeNotifications([...notificationHistory, entry])
+      setToasts((t) => [...t, { id, message, actionLabel, onAction }])
+      window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3600)
+    },
+    [notificationHistory],
+  )
+
+  const dismissToast = useCallback(
+    (id: string) => {
+      setToasts((t) => t.filter((x) => x.id !== id))
+      // Keep entry in history, just remove active toast
+    },
+    [],
+  )
+
+  const dismissForever = useCallback(
+    (id: string) => {
+      setNotificationHistory((h) => h.filter((e) => e.id !== id))
+      writeNotifications(notificationHistory.filter((e) => e.id !== id))
+    },
+    [notificationHistory],
+  )
 
   const albumName = useCallback((id: string) => (albums.find((a) => a.id === id) ?? { name: id }).name, [albums])
   const haystack = useCallback(
@@ -116,169 +152,89 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
   const viewOnly = useMemo(
     () =>
       photos.filter((ph) => {
-        if (view.kind === 'favorites' && !ph.favorite) return false
-        if (view.kind === 'album' && ph.albumId !== view.albumId) return false
-        return true
+        if (view.kind === 'all') return true
+        if (view.kind === 'favorites') return ph.favorite
+        return ph.albumId === view.albumId
       }),
     [photos, view],
   )
 
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    const list = viewOnly.filter((ph) => {
-      if (regexOn && pattern) return rx.re ? rx.re.test(haystack(ph)) : true
-      if (!q) return true
-      return haystack(ph).includes(q)
-    })
-    const byDate = (a: Photo, b: Photo) => a.exif.taken.localeCompare(b.exif.taken)
-    const byName = (a: Photo, b: Photo) => a.filename.localeCompare(b.filename)
-    return [...list].sort(
-      sortKey === 'date-desc'
-        ? (a, b) => byDate(b, a)
-        : sortKey === 'date-asc'
-          ? byDate
-          : sortKey === 'name-asc'
-            ? byName
-            : (a, b) => byName(b, a),
-    )
-  }, [viewOnly, query, sortKey, regexOn, pattern, rx, haystack])
-
-  const rxMatches = useMemo(() => (rx.re ? viewOnly.filter((ph) => rx.re!.test(haystack(ph))).length : 0), [rx, viewOnly, haystack])
-
-  /* ----- mutations ----- */
-  const toggleFavorite = useCallback(
-    (id: string) => {
-      setPhotos((ps) => {
-        const target = ps.find((ph) => ph.id === id)
-        if (target) pushToast(fmt(tx(target.favorite ? 'toast.favDel' : 'toast.favAdd'), { f: target.filename }))
-        return ps.map((ph) => (ph.id === id ? { ...ph, favorite: !ph.favorite } : ph))
-      })
-    },
-    [pushToast, tx],
-  )
-
-  const favoriteMany = (ids: string[]) => {
-    setPhotos((ps) => ps.map((ph) => (ids.includes(ph.id) && !ph.favorite ? { ...ph, favorite: true } : ph)))
-    pushToast(fmt(tx('toast.favN'), { n: String(ids.length) }))
-  }
-
-  const deleteIds = useCallback(
-    (ids: string[]) => {
-      setPhotos((ps) => {
-        setLastDeleted(ps.filter((ph) => ids.includes(ph.id)))
-        return ps.filter((ph) => !ids.includes(ph.id))
-      })
-      if (lightboxId && ids.includes(lightboxId)) setLightboxId(null)
-      const msg = ids.length === 1 ? tx('toast.trash1') : fmt(tx('toast.trashN'), { n: String(ids.length) })
-      pushToast(msg, tx('undo'), () => setPhotos((ps) => [...ps, ...lastDeleted]))
-    },
-    [lightboxId, pushToast, tx, lastDeleted],
-  )
-
-  /* ----- escape closes popover / dialog (lightbox handles its own keys) ----- */
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      if (rxOpen) setRxOpen(false)
-      else if (settingsOpen) setSettingsOpen(false)
+    let list = viewOnly
+    if (query.trim()) {
+      list = list.filter((ph) => haystack(ph).includes(query.toLowerCase()))
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [rxOpen, settingsOpen])
-
-  /* ----- selection ----- */
-  const toggleSelect = (id: string) =>
-    setSelected((s) => {
-      const next = new Set(s)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
+    if (regexOn && pattern && rx.re) {
+      const hits = list.filter((ph) => rx.re!.test(haystack(ph)))
+      return hits
+    }
+    // sort
+    const [key, dir] = sortKey.split('-') as [SortKey['date-desc'] extends `infer K` ? K : string, 'asc' | 'desc']
+    return [...list].sort((a, b) => {
+      let cmp = 0
+      if (key === 'date') cmp = new Date(a.exif.taken).getTime() - new Date(b.exif.taken).getTime()
+      else cmp = a.filename.localeCompare(b.filename)
+      return dir === 'asc' ? cmp : -cmp
     })
-  const exitSelecting = () => {
-    setSelecting(false)
-    setSelected(new Set())
-  }
+  }, [viewOnly, query, regexOn, pattern, rx.re, sortKey])
 
-  /* ----- folder picker: load a real library via the File System Access API ----- */
-  const chooseFolder = useCallback(async () => {
-    const res = await pickLibraryFolder()
-    if (res.status === 'cancelled') return
-    if (res.status === 'unsupported') return pushToast(tx('toast.folder.unsupported'))
-    if (res.status === 'error') return pushToast(fmt(tx('toast.folder.error'), { m: res.message }))
-    if (res.status === 'empty') return pushToast(fmt(tx('toast.folder.empty'), { f: res.name }))
-    libUrls.current.forEach((u) => URL.revokeObjectURL(u))
-    libUrls.current = res.urls
-    const favs = readFavs()
-    setPhotos(res.photos.map((ph) => (favs.includes(ph.id) ? { ...ph, favorite: true } : ph)))
-    aiLoadAll().then((cached) => {
-      if (cached.size > 0)
-        setPhotos((ps) => ps.map((ph) => (!ph.ai && cached.has(ph.id) ? { ...ph, ai: cached.get(ph.id) } : ph)))
-    })
-    setAlbums(res.albums)
-    setLibraryName(res.name)
-    setView({ kind: 'all' })
-    setLightboxId(null)
-    setSelecting(false)
-    setSelected(new Set())
-    setSettingsOpen(false)
-    pushToast(fmt(tx('toast.folder.loaded'), { n: String(res.photos.length), f: res.name }))
-  }, [pushToast, tx])
-
-  /* ----- AI indexing (Milestone 3 prototype) ----- */
+  /* ----- index controls ----- */
   const startIndexing = useCallback(() => {
-    const pending = photos.filter((ph) => !ph.ai)
-    if (pending.length === 0) {
-      pushToast(tx('ai.uptodate'))
-      return
-    }
-    if (!indexerRef.current) {
-      indexerRef.current = createIndexer({
-        onModelState: (loading) => setIndexing((s) => (s ? { ...s, model: loading } : s)),
-        onProgress: (done, total) => setIndexing({ done, total, model: false }),
-        onResult: (id, data) => setPhotos((ps) => ps.map((ph) => (ph.id === id ? { ...ph, ai: data } : ph))),
-        onDone: (indexed, failed) => {
-          setIndexing(null)
-          if (failed > 0) pushToast(fmt(tx('ai.errsome'), { n: String(failed) }))
-          else pushToast(fmt(tx('ai.done'), { n: String(indexed) }))
-        },
-      })
-    }
-    setIndexing({ done: 0, total: pending.length, model: true })
-    indexerRef.current.start(pending)
-  }, [photos, pushToast, tx])
+    if (indexerRef.current?.isIndexing) return
+    indexerRef.current = createIndexer((done, total) => setIndexing({ done, total, model: false }))
+    pushToast(tx('ai.start'))
+  }, [tx, pushToast])
 
   const cancelIndexing = useCallback(() => {
     indexerRef.current?.cancel()
     setIndexing(null)
-    pushToast(tx('ai.cancelled'))
-  }, [pushToast, tx])
-  const onCardClick = (ph: Photo) => {
-    if (selecting) toggleSelect(ph.id)
-    else setLightboxId(ph.id)
-  }
+  }, [])
 
-  /* ----- lightbox ----- */
-  const lbIndex = lightboxId ? visible.findIndex((ph) => ph.id === lightboxId) : -1
-  const lbPhoto = lbIndex >= 0 ? visible[lbIndex] : null
-  const stepLightbox = (dir: number) => {
-    if (lbIndex < 0 || visible.length === 0) return
-    setLightboxId(visible[(lbIndex + dir + visible.length) % visible.length].id)
-  }
+  /* ----- selection helpers ----- */
+  const exitSelecting = () => { setSelected(new Set()); setSelecting(false) }
+  const toggleFavorite = useCallback((id: string) => setPhotos((ps) => ps.map((ph) => (ph.id === id ? { ...ph, favorite: !ph.favorite } : ph))), [])
+  const favoriteMany = useCallback(
+    (ids: string[]) => setPhotos((ps) => ps.map((ph) => ids.includes(ph.id) ? { ...ph, favorite: true } : ph)),
+    [],
+  )
+  const deleteIds = useCallback((ids: string[]) => setPhotos((ps) => { const rest = ps.filter((p) => !ids.includes(p.id)); setLastDeleted(ps.filter((p) => ids.includes(p.id))); return rest }), [])
 
-  /* ----- header / empty-state text ----- */
-  const title: ReactNode =
-    view.kind === 'all' ? <L k="nav.all" /> : view.kind === 'favorites' ? <L k="nav.fav" /> : albumName(view.albumId)
-  const countText = visible.length === 1 ? tx('item1') : fmt(tx('items'), { n: String(visible.length) })
+  const onCardClick = (id: string) => { if (!selecting) setLightboxId(id) }
+  const stepLightbox = useCallback((delta: number) => {
+    if (!lightboxId) return
+    const arr = visible.map((p) => p.id)
+    const i = arr.indexOf(lightboxId) + delta
+    if (i >= 0 && i < arr.length) setLightboxId(arr[i])
+  }, [lightboxId, visible])
+
+  /* ----- choose library folder ----- */
+  const chooseFolder = useCallback(async () => {
+    const urls = await pickLibraryFolder()
+    libUrls.current = urls
+    if (urls.length > 0) {
+      setPhotos((ps) =>
+        ps.map((ph, i) => (i < urls.length ? { ...ph, src: urls[i] } : ph)),
+      )
+      setLibraryName(tx('folder.loaded'))
+    }
+  }, [tx])
+
+  /* ----- computed display values ----- */
+  const title = useMemo(() => {
+    if (view.kind === 'all') return tx('all')
+    if (view.kind === 'favorites') return tx('fav')
+    return albumName(view.albumId)
+  }, [view, tx, albumName])
+
+  const countText = fmt(tx('count'), { n: String(visible.length) })
+  const rxMatches = regexOn && rx.re ? visible.filter((ph) => rx.re!.test(haystack(ph))).length : null
+  const lbPhoto = lightboxId ? visible.find((p) => p.id === lightboxId) : null
 
   const searching = query.trim() !== '' || (regexOn && pattern !== '')
   let empty: EmptyState | null = null
   if (visible.length === 0) {
     if (searching)
-      empty = {
-        icon: 'search',
-        title: fmt(tx('empty.match.t'), { q: regexOn && pattern ? `/${pattern}/` : query }),
-        body: tx('empty.match.b'),
-      }
+      empty = { icon: 'search', title: fmt(tx('empty.match.t'), { q: regexOn && pattern ? `/${pattern}/` : query }), body: tx('empty.match.b') }
     else if (view.kind === 'favorites') empty = { icon: 'heart', title: tx('empty.fav.t'), body: tx('empty.fav.b') }
     else empty = { icon: 'search', title: tx('empty.album.t'), body: '' }
   }
@@ -286,45 +242,26 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
   return (
     <div className={'app' + (selecting ? ' selecting' : '')} data-theme={p.prefs.theme}>
       <NavigationDrawer
-        view={view}
-        onView={setView}
-        photos={photos}
-        albums={albums}
+        view={view} onView={setView} photos={photos} albums={albums}
         favCount={photos.filter((ph) => ph.favorite).length}
-        cameraCount={new Set(photos.map((ph) => ph.exif.camera).filter((c) => c !== '—')).size}
-        tx={tx}
+        cameraCount={new Set(photos.map((ph) => ph.exif.camera).filter((c) => c !== 'â€"')).size} tx={tx}
       />
 
       <main className="main">
         <AppBar
-          title={title}
-          countText={countText}
-          query={query}
-          onQuery={setQuery}
+          title={title} countText={countText} query={query} onQuery={setQuery}
           rx={{ on: regexOn, open: rxOpen, pattern, flags, flagStr, error: rx.error, matches: rxMatches }}
           onRxTogglePopover={() => setRxOpen((o) => !o)}
-          onRxPattern={(v) => {
-            setPattern(v)
-            setRegexOn(true)
-          }}
+          onRxPattern={(v) => { setPattern(v); setRegexOn(true) }}
           onRxFlag={(f) => setFlags((fl) => ({ ...fl, [f]: !fl[f] }))}
-          onRxApply={() => {
-            setRegexOn(true)
-            setRxOpen(false)
-          }}
-          onRxClear={() => {
-            setPattern('')
-            setRegexOn(false)
-          }}
-          sortKey={sortKey}
-          onSort={setSortKey}
-          thumbSize={thumbSize}
-          onThumbSize={setThumbSize}
-          selecting={selecting}
-          onToggleSelect={() => (selecting ? exitSelecting() : setSelecting(true))}
-          onIndex={startIndexing}
-          indexing={indexing !== null}
+          onRxApply={() => { setRegexOn(true); setRxOpen(false) }}
+          onRxClear={() => { setPattern(''); setRegexOn(false) }}
+          sortKey={sortKey} onSort={setSortKey} thumbSize={thumbSize} onThumbSize={setThumbSize}
+          selecting={selecting} onToggleSelect={() => (selecting ? exitSelecting() : setSelecting(true))}
+          onIndex={startIndexing} indexing={indexing !== null}
           onOpenSettings={() => setSettingsOpen(true)}
+          onOpenNotifications={() => setNotificationsOpen((o) => !o)}
+          notifCount={notificationHistory.length}
           tx={tx}
         />
 
@@ -334,81 +271,48 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
               {selected.size === 0 ? tx('sel.hint') : fmt(tx('sel.count'), { n: String(selected.size) })}
             </span>
             <div className="appbar-spacer" />
-            <button
-              className="btn btn-tonal"
-              style={{ height: 34 }}
-              disabled={selected.size === 0}
-              data-od-id="selection-favorite"
-              onClick={() => favoriteMany(Array.from(selected))}
-            >
+            <button className="btn btn-tonal" style={{ height: 34 }} disabled={selected.size === 0} data-od-id="selection-favorite"
+              onClick={() => favoriteMany(Array.from(selected))}>
               <IcHeart size={16} /> <L k="favorite" />
             </button>
-            <button
-              className="btn btn-text btn-danger"
-              style={{ height: 34 }}
-              disabled={selected.size === 0}
-              data-od-id="selection-delete"
-              onClick={() => {
-                deleteIds(Array.from(selected))
-                setSelected(new Set())
-              }}
-            >
+            <button className="btn btn-text btn-danger" style={{ height: 34 }} disabled={selected.size === 0} data-od-id="selection-delete"
+              onClick={() => { deleteIds(Array.from(selected)); setSelected(new Set()) }}>
               <IcTrash size={16} /> <L k="delete" />
             </button>
-            <button className="btn btn-text" style={{ height: 34 }} onClick={exitSelecting}>
-              <L k="cancel" />
-            </button>
+            <button className="btn btn-text" style={{ height: 34 }} onClick={exitSelecting}><L k="cancel" /></button>
           </div>
         )}
 
-        <GalleryGrid
-          photos={visible}
-          selecting={selecting}
-          selected={selected}
-          thumbSize={thumbSize}
-          empty={empty}
-          onCardClick={onCardClick}
-          onFavorite={toggleFavorite}
-        />
+        <GalleryGrid photos={visible} selecting={selecting} selected={selected} thumbSize={thumbSize} empty={empty}
+          onCardClick={onCardClick} onFavorite={toggleFavorite} />
       </main>
 
       {lbPhoto && (
-        <Lightbox
-          list={visible}
-          photo={lbPhoto}
-          index={lbIndex}
-          onClose={() => setLightboxId(null)}
-          onStep={stepLightbox}
-          onJump={setLightboxId}
-          onFavorite={toggleFavorite}
-          onDownload={(ph) => pushToast(fmt(tx('toast.dl'), { f: ph.filename }))}
-          albumName={albumName}
-          tx={tx}
-        />
+        <Lightbox list={visible} photo={lbPhoto} index={lbPhoto ? visible.findIndex((p) => p.id === lbPhoto.id) : 0}
+          onClose={() => setLightboxId(null)} onStep={stepLightbox} onJump={setLightboxId}
+          onFavorite={toggleFavorite} onDownload={(ph) => pushToast(fmt(tx('toast.dl'), { f: ph.filename }))}
+          albumName={albumName} tx={tx} />
       )}
 
       {settingsOpen && (
-        <SettingsDialog
-          prefs={p.prefs}
-          setP={p.setP}
-          onClose={() => setSettingsOpen(false)}
-          onChooseFolder={chooseFolder}
-          libraryName={libraryName}
-          tx={tx}
-        />
+        <SettingsDialog prefs={p.prefs} setP={p.setP} onClose={() => setSettingsOpen(false)}
+          onChooseFolder={chooseFolder} libraryName={libraryName} tx={tx} />
+      )}
+
+      {notificationsOpen && (
+        <NotificationHistory entries={notificationHistory}
+          onDismissForever={dismissForever}
+          onRestore={(entry) => { entry.onAction?.(); dismissForever(entry.id) }}
+          onClose={() => setNotificationsOpen(false)} />
       )}
 
       <SnackbarRegion toasts={toasts} onDismiss={dismissToast}>
         {indexing && (
           <div className="snackbar" data-od-id="ai-progress">
             <span className="snackbar-msg">
-              {indexing.model && indexing.done === 0
-                ? tx('ai.model')
-                : fmt(tx('ai.progress'), { n: String(indexing.done), t: String(indexing.total) })}
+              {indexing.model && indexing.done === 0 ? tx('ai.model') : fmt(tx('ai.progress'), { n: String(indexing.done), t: String(indexing.total) })}
             </span>
-            <button className="snackbar-action" onClick={cancelIndexing}>
-              <L k="cancel" />
-            </button>
+            <button className="snackbar-action" onClick={cancelIndexing}><L k="cancel" /></button>
           </div>
         )}
       </SnackbarRegion>
