@@ -11,7 +11,7 @@ Repository initialized and published to GitHub: `DingDingChae/Photo-Viewer`.
 - GitHub Project created, linked to the repo, with one task item moved to `In Progress`.
 
 **Next up:**
-1. Scaffold the app: Vite + React + TypeScript (see ROADMAP.md Milestone 1).
+1. Scaffold the app: Vite + React + TypeScript (see ROADMAP.md Milestone 1). Follow the step-by-step guide in [BUILD-INSTRUCTIONS.md](BUILD-INSTRUCTIONS.md).
 2. Add CI workflow (trigger: `push` + `workflow_dispatch`) that tests first, then creates one uniquely tagged non-draft release on success.
 3. Design the persistent AI index schema before writing indexing code.
 4. Plan the self-hosting architecture early (backend + frontend in one Docker image, volume-mounted library, original-file download endpoint) so the Milestone 1 scaffold doesn't box it in.
