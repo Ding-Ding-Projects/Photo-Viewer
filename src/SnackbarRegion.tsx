@@ -1,10 +1,12 @@
 import { IcX } from './icons'
+import type { ReactNode } from 'react'
 import type { Toast } from './types'
 
 /** M3 snackbars — informational, non-blocking, corner-placed per the repo spec. */
-export default function SnackbarRegion(p: { toasts: Toast[]; onDismiss: (id: string) => void }) {
+export default function SnackbarRegion(p: { toasts: Toast[]; onDismiss: (id: string) => void; children?: ReactNode }) {
   return (
     <div className="toast-region" data-od-id="toast-region" aria-live="polite">
+      {p.children}
       {p.toasts.map((t) => (
         <div className="snackbar" key={t.id}>
           <span className="snackbar-msg">{t.message}</span>

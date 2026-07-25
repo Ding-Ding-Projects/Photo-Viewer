@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import L from './L'
-import { IcGear, IcSearch, IcX } from './icons'
+import { IcGear, IcSearch, IcSparkle, IcX } from './icons'
 import { fmt, useBi } from './i18n'
 import type { SortKey } from './types'
 
@@ -38,6 +38,8 @@ export default function AppBar(p: {
   onThumbSize: (n: number) => void
   selecting: boolean
   onToggleSelect: () => void
+  onIndex: () => void
+  indexing: boolean
   onOpenSettings: () => void
   tx: (k: string) => string
 }) {
@@ -158,6 +160,15 @@ export default function AppBar(p: {
 
       <button className={'btn ' + (p.selecting ? 'btn-filled' : 'btn-tonal')} data-od-id="select-toggle" onClick={p.onToggleSelect}>
         <L k={p.selecting ? 'done' : 'select'} />
+      </button>
+      <button
+        className="icon-btn"
+        data-od-id="ai-index-button"
+        title={p.tx('ai.tip')}
+        disabled={p.indexing}
+        onClick={p.onIndex}
+      >
+        <IcSparkle />
       </button>
       <button className="icon-btn" data-od-id="settings-button" title={p.tx('settings')} onClick={p.onOpenSettings}>
         <IcGear />

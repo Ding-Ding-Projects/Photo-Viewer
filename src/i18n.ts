@@ -110,6 +110,15 @@ export const STR: Record<string, Str> = {
   'foot.note': { e: 'Indexed locally · originals intact', z: '本機索引 · 原檔完整無改' },
   items: { e: '{n} items', z: '{n} 項' },
   item1: { e: '1 item', z: '1 項' },
+  'ai.tip': { e: 'Index with on-device AI', z: '用裝置端 AI 建立索引' },
+  'ai.model': { e: 'Downloading AI model (one-time)…', z: '正在下載 AI 模型（一次性）…' },
+  'ai.progress': { e: 'Indexing photos… {n}/{t}', z: '建立索引緊… {n}/{t}', f: 'AI 睇相緊… {n}/{t}' },
+  'ai.done': { e: 'Indexed {n} photos — tags are searchable now', z: '已索引 {n} 張相 — 而家搜到標籤喇', f: 'AI 睇完 {n} 張相，而家搜到 tag 喇' },
+  'ai.uptodate': { e: 'Every photo is already indexed', z: '所有相片已建立索引' },
+  'ai.cancelled': { e: 'Indexing cancelled', z: '已取消索引' },
+  'ai.errsome': { e: 'Indexing finished, but {n} photos failed', z: '索引完成，但有 {n} 張失敗' }, // errors stay clear
+  'ai.tags': { e: 'AI tags', z: 'AI 標籤' },
+  'ai.colors': { e: 'Dominant colors', z: '主色' },
 }
 
 export function fmt(tpl: string, vars: Record<string, string>): string {

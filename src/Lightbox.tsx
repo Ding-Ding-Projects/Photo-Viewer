@@ -184,6 +184,25 @@ export default function Lightbox(p: {
               <ExifRow k={p.tx('info.size')} v={photo.exif.size} />
               <ExifRow k={p.tx('info.format')} v={(photo.filename.split('.').pop() ?? '').toUpperCase() + ' · original'} />
             </div>
+            {photo.ai && photo.ai.labels.length > 0 && (
+              <>
+                <div className="lb-info-title">{p.tx('ai.tags')}</div>
+                <div className="tag-row" data-od-id="ai-tags">
+                  {photo.ai.labels.map((l) => (
+                    <span key={l.text} className="tag-chip" title={String(Math.round(l.score * 100)) + '%'}>
+                      {l.text}
+                    </span>
+                  ))}
+                </div>
+                {photo.ai.colors.length > 0 && (
+                  <div className="tag-row" data-od-id="ai-colors" aria-label={p.tx('ai.colors')}>
+                    {photo.ai.colors.map((c) => (
+                      <span key={c.join(',')} className="color-dot" style={{ background: `rgb(${c[0]} ${c[1]} ${c[2]})` }} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
             <a
               className="lb-download"
               data-od-id="download-original"

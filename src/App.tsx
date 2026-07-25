@@ -9,6 +9,8 @@ import NavigationDrawer from './NavigationDrawer'
 import SettingsDialog from './SettingsDialog'
 import SnackbarRegion from './SnackbarRegion'
 import { IcHeart, IcTrash } from './icons'
+import { createIndexer } from './aiIndexer'
+import { aiLoadAll } from './aiStore'
 import { pickLibraryFolder } from './library'
 import { ALBUMS, BASE_PHOTOS } from './data'
 import { I18nContext, fmt, makeBi, useTx } from './i18n'
@@ -58,6 +60,20 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
   const [albums, setAlbums] = useState<Album[]>(ALBUMS)
   const [libraryName, setLibraryName] = useState<string | null>(null)
   const libUrls = useRef<string[]>([])
+  const [indexing, setIndexing] = useState<{ done: number; total: number; model: boolean } | null>(null)
+  const indexerRef = useRef<ReturnType<typeof createIndexer> | null>(null)
+
+  /* apply cached AI tags from a previous session (index once, search forever) */
+  useEffect(() => {
+    let alive = true
+    aiLoadAll().then((cached) => {
+      if (!alive || cached.size === 0) return
+      setPhotos((ps) => ps.map((ph) => (!ph.ai && cached.has(ph.id) ? { ...ph, ai: cached.get(ph.id) } : ph)))
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
 
   /* ----- regex search (plain text is the default; builder opt-in per repo spec) ----- */
   const [regexOn, setRegexOn] = useState(false)
@@ -90,7 +106,10 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
 
   const albumName = useCallback((id: string) => (albums.find((a) => a.id === id) ?? { name: id }).name, [albums])
   const haystack = useCallback(
-    (ph: Photo) => [ph.filename, albumName(ph.albumId), ph.exif.location, ph.exif.camera].join(' ').toLowerCase(),
+    (ph: Photo) =>
+      [ph.filename, albumName(ph.albumId), ph.exif.location, ph.exif.camera, ...(ph.ai?.labels.map((l) => l.text) ?? [])]
+        .join(' ')
+        .toLowerCase(),
     [albumName],
   )
 
@@ -191,6 +210,10 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
     libUrls.current = res.urls
     const favs = readFavs()
     setPhotos(res.photos.map((ph) => (favs.includes(ph.id) ? { ...ph, favorite: true } : ph)))
+    aiLoadAll().then((cached) => {
+      if (cached.size > 0)
+        setPhotos((ps) => ps.map((ph) => (!ph.ai && cached.has(ph.id) ? { ...ph, ai: cached.get(ph.id) } : ph)))
+    })
     setAlbums(res.albums)
     setLibraryName(res.name)
     setView({ kind: 'all' })
@@ -199,6 +222,35 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
     setSelected(new Set())
     setSettingsOpen(false)
     pushToast(fmt(tx('toast.folder.loaded'), { n: String(res.photos.length), f: res.name }))
+  }, [pushToast, tx])
+
+  /* ----- AI indexing (Milestone 3 prototype) ----- */
+  const startIndexing = useCallback(() => {
+    const pending = photos.filter((ph) => !ph.ai)
+    if (pending.length === 0) {
+      pushToast(tx('ai.uptodate'))
+      return
+    }
+    if (!indexerRef.current) {
+      indexerRef.current = createIndexer({
+        onModelState: (loading) => setIndexing((s) => (s ? { ...s, model: loading } : s)),
+        onProgress: (done, total) => setIndexing({ done, total, model: false }),
+        onResult: (id, data) => setPhotos((ps) => ps.map((ph) => (ph.id === id ? { ...ph, ai: data } : ph))),
+        onDone: (indexed, failed) => {
+          setIndexing(null)
+          if (failed > 0) pushToast(fmt(tx('ai.errsome'), { n: String(failed) }))
+          else pushToast(fmt(tx('ai.done'), { n: String(indexed) }))
+        },
+      })
+    }
+    setIndexing({ done: 0, total: pending.length, model: true })
+    indexerRef.current.start(pending)
+  }, [photos, pushToast, tx])
+
+  const cancelIndexing = useCallback(() => {
+    indexerRef.current?.cancel()
+    setIndexing(null)
+    pushToast(tx('ai.cancelled'))
   }, [pushToast, tx])
   const onCardClick = (ph: Photo) => {
     if (selecting) toggleSelect(ph.id)
@@ -270,6 +322,8 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
           onThumbSize={setThumbSize}
           selecting={selecting}
           onToggleSelect={() => (selecting ? exitSelecting() : setSelecting(true))}
+          onIndex={startIndexing}
+          indexing={indexing !== null}
           onOpenSettings={() => setSettingsOpen(true)}
           tx={tx}
         />
@@ -344,7 +398,20 @@ function Shell(p: { prefs: ReturnType<typeof usePrefs>[0]; setP: ReturnType<type
         />
       )}
 
-      <SnackbarRegion toasts={toasts} onDismiss={dismissToast} />
+      <SnackbarRegion toasts={toasts} onDismiss={dismissToast}>
+        {indexing && (
+          <div className="snackbar" data-od-id="ai-progress">
+            <span className="snackbar-msg">
+              {indexing.model && indexing.done === 0
+                ? tx('ai.model')
+                : fmt(tx('ai.progress'), { n: String(indexing.done), t: String(indexing.total) })}
+            </span>
+            <button className="snackbar-action" onClick={cancelIndexing}>
+              <L k="cancel" />
+            </button>
+          </div>
+        )}
+      </SnackbarRegion>
     </div>
   )
 }

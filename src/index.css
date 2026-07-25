@@ -409,6 +409,11 @@ kbd { font-family: var(--font-mono); font-size: 10.5px; border: 1px solid var(--
 .snackbar-action { color: var(--inverse-primary); font-weight: 500; font-size: var(--fs-14); padding: 4px 10px; border-radius: var(--r-xs); }
 .snackbar-action:hover { background: color-mix(in oklab, var(--inverse-primary) 12%, transparent); }
 
+/* ============ AI tags (lightbox info panel) ============ */
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 0 10px; }
+.tag-chip { background: oklch(100% 0 0 / 0.12); color: var(--lb-fg); border-radius: 999px; padding: 3px 10px; font-size: var(--fs-12); }
+.color-dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--lb-line); }
+
 @media (max-width: 900px) {
   .app { grid-template-columns: 1fr; }
   .drawer { display: none; }
